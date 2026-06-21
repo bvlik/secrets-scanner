@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secrets-scanner"
+version = "0.1.0"
+description = "Lightweight secrets scanner and pre-commit hook"
+requires-python = ">=3.10"
+dependencies = ["rich>=13.7"]
+
+[project.scripts]
+secrets-scanner = "secretscanner.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
