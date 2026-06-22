@@ -38,6 +38,18 @@ Mark an intentional value with a trailing `# pragma: allowlist secret` to skip i
 pip install .
 secrets-scanner path/to/dir          # scan files/dirs
 secrets-scanner --staged             # scan git-staged files (pre-commit)
+secrets-scanner --json path/to/dir   # normalized JSON findings
+```
+
+### Plays nicely with the toolkit
+
+`--json` emits the normalized findings schema (`{"source", "findings":[{id,severity,message,location}]}`),
+so it pipes straight into [findings-aggregator](https://github.com/bvlik/findings-aggregator) — secrets stay
+redacted in the output:
+
+```bash
+secrets-scanner --json . > secrets.json
+findings-agg secrets.json gha.json --html report.html
 ```
 
 ### As a pre-commit hook
@@ -53,6 +65,7 @@ repos:
 Exit code is non-zero when a secret is found, so the commit is blocked.
 
 ## Roadmap
+- [x] Normalized JSON output (feeds findings-aggregator)
 - [ ] Shannon-entropy detection for high-entropy blobs
 - [ ] Baseline file to accept known/legacy findings
 - [ ] SARIF output for code scanning

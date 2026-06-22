@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 
 from rich.console import Console
 
-from .scanner import scan_paths
+from .scanner import Finding, scan_paths
 
 
 def _staged_files() -> list[str]:
@@ -20,14 +21,36 @@ def _staged_files() -> list[str]:
     return [line for line in out.stdout.splitlines() if line.strip()]
 
 
+def to_normalized(findings: list[Finding]) -> dict:
+    """Normalized findings schema, ready for findings-aggregator."""
+    return {
+        "source": "secrets-scanner",
+        "findings": [
+            {
+                "id": f.rule,
+                "severity": f.severity,
+                "message": f"{f.rule}: {f.secret}",
+                "location": f"{f.path}:{f.line_no}",
+            }
+            for f in findings
+        ],
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="secrets-scanner", description="Detect secrets in files")
     parser.add_argument("paths", nargs="*", help="files or directories to scan")
     parser.add_argument("--staged", action="store_true", help="scan git-staged files (pre-commit)")
+    parser.add_argument("--json", action="store_true",
+                        help="emit normalized JSON findings (pipes into findings-aggregator)")
     args = parser.parse_args(argv)
 
     paths = _staged_files() if args.staged else (args.paths or ["."])
     findings = scan_paths(paths)
+
+    if args.json:
+        print(json.dumps(to_normalized(findings), indent=2))
+        return 1 if findings else 0
 
     console = Console()
     if not findings:
